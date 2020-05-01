@@ -262,7 +262,7 @@ def final_layer(x, classes=1):
 
 
 def seg_hrnet(batch_size, height, width, channel, classes):
-    inputs = Input(batch_shape=(batch_size,) + (height, width, channel))
+    inputs = Input(shape=(height, width, channel))
 
     x = stem_net(inputs)
 
