@@ -1,3 +1,7 @@
+# Segmentation Multiclass
+
+Added code in `segment_mc.py` to apply HRNet to arbitrary datasets.
+
 # HRNet-keras-semantic-segmentation
 
 **HRNet v1：[Deep High-Resolution Representation Learning for Human Pose Estimation](<https://arxiv.org/abs/1902.09212>)**
