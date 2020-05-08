@@ -42,7 +42,7 @@ from keras.preprocessing.image import ImageDataGenerator
 
 from model.seg_hrnet import seg_hrnet
 
-#sys.stdout = open('./joboutput8.txt', 'w')
+#sys.stdout = open('./joboutput9.txt', 'w')
 
 # Uncomment to use the TensorFlow Debugger
 #from tensorflow.python import debug as tf_debug
@@ -297,7 +297,7 @@ def extract(argv):
 
     return
 
-def scoreModel(imglist, base_model, outfile, cmap, aug=0):
+def scoreModel(imglist, base_model, outfile, cmap, aug=1):
 
     chunksize = T_G_CHUNKSIZE
     total_img = file_numlines(imglist)
@@ -308,26 +308,26 @@ def scoreModel(imglist, base_model, outfile, cmap, aug=0):
         valsa = base_model.predict(imgs)
         
         # test time data augmentation
-        #if (aug > 0):
-            #valsb = base_model.predict(scipy.ndimage.rotate(imgs, 90, axes=(2,1), reshape=False))
-            #valsb = scipy.ndimage.rotate(valsb, 270, axes=(2,1), reshape=False)
-            #valsc = base_model.predict(scipy.ndimage.rotate(imgs, 180, axes=(2,1), reshape=False))
-            #valsc = scipy.ndimage.rotate(valsc, 180, axes=(2,1), reshape=False)
-            #valsd = base_model.predict(scipy.ndimage.rotate(imgs, 270, axes=(2,1), reshape=False))
-            #valsd = scipy.ndimage.rotate(valsd, 90, axes=(2,1), reshape=False)
+        if (aug > 0):
+            valsb = base_model.predict(scipy.ndimage.rotate(imgs, 90, axes=(2,1), reshape=False))
+            valsb = scipy.ndimage.rotate(valsb, 270, axes=(2,1), reshape=False)
+            valsc = base_model.predict(scipy.ndimage.rotate(imgs, 180, axes=(2,1), reshape=False))
+            valsc = scipy.ndimage.rotate(valsc, 180, axes=(2,1), reshape=False)
+            valsd = base_model.predict(scipy.ndimage.rotate(imgs, 270, axes=(2,1), reshape=False))
+            valsd = scipy.ndimage.rotate(valsd, 90, axes=(2,1), reshape=False)
             #valse = base_model.predict(np.roll(imgs, 10, axis=2))
             #valse = np.roll(valse, -10, axis=2)
             #valsf = base_model.predict(np.roll(imgs, 10, axis=1))
             #valsf = np.roll(valsf, -10, axis=1)
 
-            #vals = (valsa + valsb + valsc + valsd) / 4.0
+            vals = (valsa + valsb + valsc + valsd) / 4.0
 
-        #else:
-        
+        else:
+            vals = valsa
 
-        vals = classToColors(valsa, cmap) / 255.
+        valsout = classToColors(vals, cmap) / 255.
 
-        t_save_image_list(imglist, i*chunksize, chunksize, vals, outfile)
+        t_save_image_list(imglist, i*chunksize, chunksize, valsout, outfile)
 
     return
 

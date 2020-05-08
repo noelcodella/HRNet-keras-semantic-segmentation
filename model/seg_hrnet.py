@@ -3,6 +3,9 @@ from keras.models import Model
 from keras.layers import Input, Conv2D, BatchNormalization, Activation
 from keras.layers import UpSampling2D, add, concatenate
 
+import keras.layers as kl
+
+GNOISE = 0.025
 
 def conv3x3(x, out_filters, strides=(1, 1)):
     x = Conv2D(out_filters, 3, padding='same', strides=strides, use_bias=False, kernel_initializer='he_normal')(x)
@@ -12,10 +15,12 @@ def conv3x3(x, out_filters, strides=(1, 1)):
 def basic_Block(input, out_filters, strides=(1, 1), with_conv_shortcut=False):
     x = conv3x3(input, out_filters, strides)
     x = BatchNormalization(axis=3)(x)
+    x = kl.GaussianNoise(GNOISE)(x) #NCFC
     x = Activation('relu')(x)
 
     x = conv3x3(x, out_filters)
     x = BatchNormalization(axis=3)(x)
+    x = kl.GaussianNoise(GNOISE)(x) #NCFC
 
     if with_conv_shortcut:
         residual = Conv2D(out_filters, 1, strides=strides, use_bias=False, kernel_initializer='he_normal')(input)
@@ -34,14 +39,17 @@ def bottleneck_Block(input, out_filters, strides=(1, 1), with_conv_shortcut=Fals
 
     x = Conv2D(de_filters, 1, use_bias=False, kernel_initializer='he_normal')(input)
     x = BatchNormalization(axis=3)(x)
+    x = kl.GaussianNoise(GNOISE)(x)
     x = Activation('relu')(x)
 
     x = Conv2D(de_filters, 3, strides=strides, padding='same', use_bias=False, kernel_initializer='he_normal')(x)
     x = BatchNormalization(axis=3)(x)
+    x = kl.GaussianNoise(GNOISE)(x)
     x = Activation('relu')(x)
 
     x = Conv2D(out_filters, 1, use_bias=False, kernel_initializer='he_normal')(x)
     x = BatchNormalization(axis=3)(x)
+    x = kl.GaussianNoise(GNOISE)(x)
 
     if with_conv_shortcut:
         residual = Conv2D(out_filters, 1, strides=strides, use_bias=False, kernel_initializer='he_normal')(input)
@@ -57,6 +65,7 @@ def bottleneck_Block(input, out_filters, strides=(1, 1), with_conv_shortcut=Fals
 def stem_net(input):
     x = Conv2D(64, 3, strides=(2, 2), padding='same', use_bias=False, kernel_initializer='he_normal')(input)
     x = BatchNormalization(axis=3)(x)
+    x = kl.GaussianNoise(GNOISE)(x)
     x = Activation('relu')(x)
 
     # x = Conv2D(64, 3, strides=(2, 2), padding='same', use_bias=False, kernel_initializer='he_normal')(x)
@@ -262,7 +271,7 @@ def final_layer(x, classes=1):
 
 
 def seg_hrnet(batch_size, height, width, channel, classes):
-    inputs = Input(shape=(height, width, channel))
+    inputs = Input(shape=(height, width, channel)) # NCFC: Removed fixed batch size
 
     x = stem_net(inputs)
 
