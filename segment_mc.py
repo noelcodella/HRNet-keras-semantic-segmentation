@@ -2,12 +2,16 @@
 # Example Semantic Segmentation Code for Keras / TensorFlow
 
 # GLOBAL DEFINES
+# Image dimensions and random seed
 T_G_WIDTH = 448 #224
 T_G_HEIGHT = 448 #224
 T_G_NUMCHANNELS = 3
 T_G_SEED = 1337
 
+# How many images to load from disk, and how many
+# before a print command to report progress
 T_G_CHUNKSIZE = 5000
+T_G_REPORTSIZE = 100
 
 USAGE_LEARN = 'Usage: \n\t -learn <Train Images (TXT)> <Train Masks (TXT)> <Val Images (TXT)> <Val Masks (TXT)> <color map (TXT)> <batch size> <num epochs> <output model prefix> <option: load weights from...> \n\t -extract <Model Prefix> <Input Image List (TXT)> <Output Folder> \n\t\tScores a model '
 
@@ -25,7 +29,6 @@ import scipy
 
 # TensorFlow Includes
 import tensorflow as tf
-#from tensorflow.contrib.losses import metric_learning
 tf.set_random_seed(T_G_SEED)
 
 # Keras Imports & Defines 
@@ -42,7 +45,7 @@ from keras.preprocessing.image import ImageDataGenerator
 
 from model.seg_hrnet import seg_hrnet
 
-#sys.stdout = open('./joboutput9.txt', 'w')
+#sys.stdout = open('./seg_output.log', 'w')
 
 # Uncomment to use the TensorFlow Debugger
 #from tensorflow.python import debug as tf_debug
@@ -52,7 +55,7 @@ from model.seg_hrnet import seg_hrnet
 
 # Generator object for data augmentation.
 # Can change values here to affect augmentation style.
-datagen = ImageDataGenerator(  rotation_range=10,
+datagen = ImageDataGenerator(  rotation_range=20,
                                 width_shift_range=0.05,
                                 height_shift_range=0.05,
                                 zoom_range=0.10,
@@ -178,9 +181,9 @@ def createDataGen(X, Y, b, cmap):
 
 
 
-def createModel(batch_size, height, width, channel, classes):
+def createModel(batch_size, height, width, channel, classes, namepref='model'):
 
-    base_model = seg_hrnet(batch_size, height, width, channel, classes)
+    base_model = seg_hrnet(batch_size, height, width, channel, classes, namepref)
 
     print base_model.summary()
 
@@ -251,6 +254,10 @@ def t_read_image_list(flist, start, length, color=1, norm=0, prep=1):
             imgset[i-start] = val
             if (norm == 1):
                 imgset[i-start] = (t_norm_image(imgset[i-start]) * 1.0 + 0.0) 
+            if (i % T_G_REPORTSIZE == 0):
+                print "("+str(i)+")...",
+
+    print("\n")            
 
     return imgset
 
