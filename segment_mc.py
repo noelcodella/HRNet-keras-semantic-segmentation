@@ -11,7 +11,10 @@ T_G_SEED = 1337
 # How many images to load from disk, and how many
 # before a print command to report progress
 T_G_CHUNKSIZE = 5000
-T_G_REPORTSIZE = 100
+T_G_REPORTSIZE = 10
+
+# when to save checkpoints (only one always overwritten)
+T_G_CHECKPOINT = 10
 
 USAGE_LEARN = 'Usage: \n\t -learn <Train Images (TXT)> <Train Masks (TXT)> <Val Images (TXT)> <Val Masks (TXT)> <color map (TXT)> <batch size> <num epochs> <output model prefix> <option: load weights from...> \n\t -extract <Model Prefix> <Input Image List (TXT)> <Output Folder> \n\t\tScores a model '
 
@@ -43,7 +46,9 @@ import keras.layers as kl
 
 from keras.preprocessing.image import ImageDataGenerator
 
+# Local Imports
 from model.seg_hrnet import seg_hrnet
+
 
 #sys.stdout = open('./seg_output.log', 'w')
 
@@ -134,19 +139,29 @@ def colorsToClass(clabels, cmap):
     
     ncmap = cmap 
 
+    # move flip outside of loop for efficiency (BGR -> RGB)
+    clabels = np.flip(clabels, axis=3)
+
     for k in range(0, clabels.shape[0]):
+        if (k % T_G_REPORTSIZE == 0):
+                print "["+str(k)+"]...",
+                sys.stdout.flush()
+
         for i in range(0, clabels.shape[1]): 
             for j in range(0, clabels.shape[2]):
                 # BGR channel order, so flip
-                c = np.flip(np.squeeze(clabels[k,i,j,:]))
+                #c = np.flip(np.squeeze(clabels[k,i,j,:]))
+                c = np.squeeze(clabels[k,i,j,:])
                 
-                kmap = (np.abs(ncmap-c)).sum(axis=1) < 50
-                kmap = kmap.astype('float')
+                # allow some tolerance in color matching
+                kmap = (np.abs(ncmap-c)).sum(axis=1) < 16
+                #kmap = kmap.astype('float')
 
                 karray[k,i,j,:] = kmap
 
-    return karray
+    print "\n"
 
+    return karray
 
 def classToColors(clabels, cmap):
 
@@ -256,6 +271,7 @@ def t_read_image_list(flist, start, length, color=1, norm=0, prep=1):
                 imgset[i-start] = (t_norm_image(imgset[i-start]) * 1.0 + 0.0) 
             if (i % T_G_REPORTSIZE == 0):
                 print "("+str(i)+")...",
+                sys.stdout.flush()
 
     print("\n")            
 
@@ -358,6 +374,12 @@ def learn(argv):
     numepochs = int(argv[6])
     outpath = argv[7] 
 
+    sys.stdout = open(outpath + '_train_output.log', 'w')
+    print 'Command line: ',
+    for a in argv:
+        print a+' ',
+    print ' '
+
     # load the class assignment color map
     cmap = np.loadtxt(cmapfile)
     numk = cmap.shape[0]
@@ -399,6 +421,8 @@ def learn(argv):
                 print 'Reading image lists ...'
                 images_t = t_read_image_list(in_t_i, t*chunksize, chunksize)
                 colors_t = t_read_image_list(in_t_m, t*chunksize, chunksize, 1, 0, 0)
+
+                print 'Parsing image labels ...'
                 masks_t = colorsToClass(colors_t, cmap) 
                 t_imloaded = 1
 
@@ -435,6 +459,17 @@ def learn(argv):
 
         print 'Validation Results: ' + str(val_res)
 
+        if (e % T_G_CHECKPOINT == 0):
+
+            print "Saving Checkpoint ..."
+            np.savetxt(outpath + '.cmap.txt',cmap)
+            model.save(outpath + '.checkpoint.h5')
+            model_json = model.to_json()
+            with open(outpath + '.json', "w") as json_file:
+                json_file.write(model_json)
+                json_file.close()
+
+
     print 'Saving model ...'
 
     # save the color map
@@ -448,6 +483,7 @@ def learn(argv):
     model_json = model.to_json()
     with open(outpath + '.json', "w") as json_file:
         json_file.write(model_json)
+        json_file.close()
 
     # scoreModel(in_v_i, model, 'debugout')
 
