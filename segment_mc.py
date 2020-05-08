@@ -365,11 +365,11 @@ def learn(argv):
     print 'Dataset has ' + str(total_t) + ' training, and ' + str(total_v) + ' validation.'
 
     print 'Creating a model ...'
-    model = createModel(batch, T_G_HEIGHT, T_G_WIDTH, T_G_NUMCHANNELS, numk)
+    model = createModel(batch, T_G_HEIGHT, T_G_WIDTH, T_G_NUMCHANNELS, numk, outpath)
 
     if len(argv) > 8:
         print 'Loading weights from: ' + argv[8] + ' ... '
-        model.load_weights(argv[8])
+        model.load_weights(argv[8], by_name=True)
 
     print 'Training loop ...'
    

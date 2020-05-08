@@ -262,15 +262,16 @@ def fuse_layer3(x):
     return x0
 
 
-def final_layer(x, classes=1):
+# NCFC: Added naming convention to support finetuning
+def final_layer(x, classes=1, layernameprefix='model'):
     x = UpSampling2D(size=(2, 2))(x)
-    x = Conv2D(classes, 1, use_bias=False, kernel_initializer='he_normal')(x)
+    x = Conv2D(classes, 1, use_bias=False, kernel_initializer='he_normal', name=layernameprefix+'_conv2d')(x)
     x = BatchNormalization(axis=3)(x)
-    x = Activation('sigmoid', name='Classification')(x)
+    x = Activation('sigmoid', name=layernameprefix+'_classification')(x)
     return x
 
 
-def seg_hrnet(batch_size, height, width, channel, classes):
+def seg_hrnet(batch_size, height, width, channel, classes, layername='model'):
     inputs = Input(shape=(height, width, channel)) # NCFC: Removed fixed batch size
 
     x = stem_net(inputs)
@@ -293,7 +294,7 @@ def seg_hrnet(batch_size, height, width, channel, classes):
     x3 = make_branch3_3(x[3])
     x = fuse_layer3([x0, x1, x2, x3])
 
-    out = final_layer(x, classes=classes)
+    out = final_layer(x, classes=classes, layernameprefix=layername)
 
     model = Model(inputs=inputs, outputs=out)
 
