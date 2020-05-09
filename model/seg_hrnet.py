@@ -266,7 +266,7 @@ def fuse_layer3(x):
 def final_layer(x, classes=1, layernameprefix='model'):
     x = UpSampling2D(size=(2, 2))(x)
     x = Conv2D(classes, 1, use_bias=False, kernel_initializer='he_normal', name=layernameprefix+'_conv2d')(x)
-    x = BatchNormalization(axis=3)(x)
+    x = BatchNormalization(axis=3, name=layernameprefix+'_bnclass')(x)
     x = Activation('sigmoid', name=layernameprefix+'_classification')(x)
     return x
 
