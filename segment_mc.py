@@ -169,6 +169,10 @@ def classToColors(clabels, cmap):
     carray = np.zeros((clabels.shape[0], clabels.shape[1], clabels.shape[2], 3))
 
     for k in range(0, clabels.shape[0]):
+        if (k % T_G_REPORTSIZE == 0):
+                print "["+str(k)+"]...",
+                sys.stdout.flush()
+
         for i in range(0, clabels.shape[1]):
             for j in range(0, clabels.shape[2]):
                 c = np.argmax(np.squeeze(clabels[k,i,j,:]))
@@ -177,6 +181,8 @@ def classToColors(clabels, cmap):
                 
                 # BGR channel order, so flip
                 carray[k,i,j,:] = np.flip(pix)
+
+    print "\n"
 
     return carray
 
