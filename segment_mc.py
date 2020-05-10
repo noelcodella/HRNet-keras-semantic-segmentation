@@ -313,6 +313,12 @@ def extract(argv):
     imglist = argv[1]
     outfile = argv[2]
 
+    sys.stdout = open(outfile + '_train_output.log', 'w')
+    print 'Command line: ',
+    for a in argv:
+        print a+' ',
+    print ' '
+
     with open(modelpref + '.json', "r") as json_file:
         model_json = json_file.read()
 
